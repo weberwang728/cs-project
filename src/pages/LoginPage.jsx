@@ -4,16 +4,20 @@ function LoginPage({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false); // 登入 / 註冊切換
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student"); // 預設學生
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [grade, setGrade] = useState("");
+  const [classroom, setClassroom] = useState("");
+  const [role, setRole] = useState("student"); // 登入時用
   const [message, setMessage] = useState("");
 
-  // 假資料庫（用 useState 存帳號密碼物件陣列）
+  // 模擬假資料庫（正式要換成 API）
   const [users, setUsers] = useState([
     { username: "teacher123", password: "1234", role: "teacher" },
     { username: "student123", password: "1234", role: "student" },
   ]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!username || !password) {
@@ -23,39 +27,61 @@ function LoginPage({ onLogin }) {
 
     if (isRegister) {
       // 註冊流程
-      if (users.find((u) => u.username === username)) {
-        setMessage("此帳號已被註冊");
+      if (password !== confirmPassword) {
+        setMessage("兩次輸入的密碼不一致");
+        return;
+      }
+      if (!name || !grade || !classroom) {
+        setMessage("請完整填寫姓名、年級、班級");
         return;
       }
 
-      // 新增帳號到假資料庫（根據選擇的角色）
-      const newUser = { username, password, role };
+      // 模擬後端會產生隨機 studentCode
+      const studentCode = "STU" + Math.floor(100000 + Math.random() * 900000);
+
+      const newUser = { username, password, role: "student", name, grade, classroom, studentCode };
       setUsers([...users, newUser]);
-      setMessage("註冊成功！請登入");
+
+      // 🚀 這裡之後要改成呼叫後端 API，例如：
+      // await fetch("/api/register", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ username, password, name, grade, classroom })
+      // });
+
+      setMessage(`註冊成功！您的驗證代碼是：${studentCode}`);
       setIsRegister(false);
       setUsername("");
       setPassword("");
-      setRole("student");
+      setConfirmPassword("");
+      setName("");
+      setGrade("");
+      setClassroom("");
     } else {
       // 登入流程
       const user = users.find(
-        (u) => u.username === username && u.password === password
+        (u) => u.username === username && u.password === password && u.role === role
       );
+
       if (!user) {
-        setMessage("帳號或密碼錯誤");
+        setMessage("帳號或密碼錯誤，或角色選擇不正確");
         return;
       }
 
-      // 登入成功，傳遞使用者資訊（包含角色）
-      onLogin(user);
+      // 🚀 這裡也要換成呼叫後端 API，例如：
+      // const res = await fetch("/api/login", { ... })
+
+      setMessage("");
+      onLogin(user); // 傳遞登入使用者資訊
     }
   };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">{isRegister ? "註冊" : "登入"}</h1>
+      <h1 className="text-3xl font-bold mb-6">{isRegister ? "學生註冊" : "登入"}</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-4 w-72">
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-4 w-80 bg-white p-6 rounded shadow">
+        {/* 帳號 */}
         <input
           type="text"
           placeholder="帳號"
@@ -63,6 +89,8 @@ function LoginPage({ onLogin }) {
           onChange={(e) => setUsername(e.target.value)}
           className="p-2 border border-gray-300 rounded"
         />
+
+        {/* 密碼 */}
         <input
           type="password"
           placeholder="密碼"
@@ -71,8 +99,46 @@ function LoginPage({ onLogin }) {
           className="p-2 border border-gray-300 rounded"
         />
 
-        {/* 註冊時才顯示角色選擇 */}
+        {/* 註冊時需要多輸入一次確認密碼 */}
         {isRegister && (
+          <input
+            type="password"
+            placeholder="確認密碼"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="p-2 border border-gray-300 rounded"
+          />
+        )}
+
+        {/* 註冊時才顯示學生資料輸入 */}
+        {isRegister && (
+          <>
+            <input
+              type="text"
+              placeholder="姓名"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="p-2 border border-gray-300 rounded"
+            />
+            <input
+              type="text"
+              placeholder="年級"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              className="p-2 border border-gray-300 rounded"
+            />
+            <input
+              type="text"
+              placeholder="班級"
+              value={classroom}
+              onChange={(e) => setClassroom(e.target.value)}
+              className="p-2 border border-gray-300 rounded"
+            />
+          </>
+        )}
+
+        {/* 登入時才顯示角色選擇 */}
+        {!isRegister && (
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
@@ -99,7 +165,10 @@ function LoginPage({ onLogin }) {
           setMessage("");
           setUsername("");
           setPassword("");
-          setRole("student");
+          setConfirmPassword("");
+          setName("");
+          setGrade("");
+          setClassroom("");
         }}
         className="mt-6 text-blue-500 underline"
       >
