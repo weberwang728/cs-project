@@ -1,0 +1,84 @@
+-- 建立資料庫
+CREATE DATABASE IF NOT EXISTS school_system;
+USE school_system;
+
+-- 建立學生帳號表格
+CREATE TABLE IF NOT EXISTS students (
+    student_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 建立老師帳號表格
+CREATE TABLE IF NOT EXISTS teachers (
+    teacher_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入 5 位老師的預設帳號密碼
+INSERT INTO teachers (username, password)
+VALUES
+('teacher1', 'password1'),
+('teacher2', 'password2'),
+('teacher3', 'password3'),
+('teacher4', 'password4'),
+('teacher5', 'password5');
+
+-- 建立裝置表格
+CREATE TABLE IF NOT EXISTS devices (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  device_name VARCHAR(255),
+  device_pubkey_base64 TEXT,      -- 存 Secure Enclave 匯出的 public key (raw, base64)
+  attestation_json JSON NULL,     -- 可放 AppAttest / WebAuthn attestation if used
+  bind_ssid VARCHAR(255),
+  bind_ip VARCHAR(64),
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_seen TIMESTAMP NULL,
+  FOREIGN KEY (student_id) REFERENCES students(student_id)
+);
+
+-- 建立 Nonce 表格
+CREATE TABLE IF NOT EXISTS nonces (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT,
+  class_id INT,
+  nonce VARCHAR(128),
+  issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP,
+  used BOOLEAN DEFAULT FALSE
+);
+
+-- 建立簽到紀錄表格
+CREATE TABLE IF NOT EXISTS attendance (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  class_id INT NOT NULL,
+  timestamp DATETIME,
+  ipfs_cid VARCHAR(255),
+  data_hash VARCHAR(128),
+  onchain_txhash VARCHAR(128),
+  verified_by_device BOOLEAN,
+  verification_meta JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ✅ 測試查詢 (檢查表格內容)
+SELECT '📘 TEACHERS TABLE' AS section;
+SELECT * FROM teachers;
+
+SELECT '📗 STUDENTS TABLE' AS section;
+SELECT * FROM students;
+
+SELECT '📱 DEVICES TABLE' AS section;
+SELECT * FROM devices;
+
+SELECT '🧩 NONCES TABLE' AS section;
+SELECT * FROM nonces;
+
+SELECT '🕒 ATTENDANCE TABLE' AS section;
+SELECT * FROM attendance;
